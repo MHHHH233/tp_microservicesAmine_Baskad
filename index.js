@@ -28,6 +28,7 @@ app.post("/auth/register", async (req, res) => {
         }
 
        
+        
         const hashedPassword = await bcrypt.hash(mot_passe, 10);
 
         

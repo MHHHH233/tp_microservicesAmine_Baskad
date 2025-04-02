@@ -2,30 +2,26 @@ const express = require("express");
 const app = express();
 const PORT = 4000;
 const mongoose = require("mongoose");
-const Produit = require("./models/Produit");
-const verifyToken = require('./middleware/auth');
-
-mongoose.set('strictQuery', true);
-mongoose.connect("mongodb://localhost:27017/produit-service", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log("Produit DB Connected"))
-.catch(err => console.error(err));
 
 
-// const Produit = mongoose.model("Produit", new mongoose.Schema({
-//   nom: String,
-//   description: String,
-//   prix: Number,
-//   created_at: { type: Date, default: Date.now }
-// }));
+
+mongoose.connect("mongodb://localhost:27017/produit-service")
+  .then(() => console.log("Produit DB Connected"))
+  .catch(err => console.error(err));
+
+
+const Produit = mongoose.model("Produit", new mongoose.Schema({
+  nom: String,
+  description: String,
+  prix: Number,
+  created_at: { type: Date, default: Date.now }
+}));
 
 
 app.use(express.json());
 
 
-app.post("/produit/ajouter", verifyToken, async (req, res) => {
+app.post("/produit/ajouter", async (req, res) => {
   try {
     const { nom, description, prix } = req.body;
     
@@ -50,7 +46,7 @@ app.post("/produit/ajouter", verifyToken, async (req, res) => {
   }
 });
 
-app.get("/produit/acheter", verifyToken, async (req, res) => {
+app.get("/produit/acheter", async (req, res) => {
   try {
     let ids = req.query.ids || [];
     
@@ -80,11 +76,10 @@ app.get("/produit/acheter", verifyToken, async (req, res) => {
   }
 });
 
-// Update the POST /produit/acheter endpoint to calculate total price
-app.post("/produit/acheter", verifyToken, async (req, res) => {
+// Add a POST endpoint for the same functionality
+app.post("/produit/acheter", async (req, res) => {
   try {
     const { ids } = req.body;
-    const email_utilisateur = req.user.email; // Get email from token
     
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: "IDs des produits requis" });
@@ -97,29 +92,10 @@ app.post("/produit/acheter", verifyToken, async (req, res) => {
     if (produits.length === 0) {
       return res.status(404).json({ message: "Aucun produit trouvé" });
     }
-
-    const prix_total = produits.reduce((total, produit) => total + produit.prix, 0);
-    
-    // Create order in commande service
-    const commandeResponse = await fetch('http://localhost:4001/commande/ajouter', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': req.headers.authorization // Forward the auth token
-      },
-      body: JSON.stringify({
-        produits: ids,
-        email_utilisateur,
-        prix_total
-      })
-    });
-
-    const commandeData = await commandeResponse.json();
     
     res.json({
       count: produits.length,
-      produits,
-      commande: commandeData
+      produits
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -127,7 +103,7 @@ app.post("/produit/acheter", verifyToken, async (req, res) => {
 });
 
 
-app.get("/produit/liste", verifyToken, async (req, res) => {
+app.get("/produit/liste", async (req, res) => {
   try {
     const produits = await Produit.find();
     res.json({

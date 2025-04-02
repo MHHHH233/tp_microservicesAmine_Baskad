@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const Commande = require("./models/Commande");
 const verifyToken = require('./middleware/auth');
 
+
 mongoose.set('strictQuery', true);
 mongoose.connect("mongodb://localhost:27017/commande-service", {
     useNewUrlParser: true,
