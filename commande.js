@@ -66,7 +66,17 @@ app.get("/commande/liste", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
+app.get('/commande/:id', verifyToken, async (req, res) => {
+  try {
+    const commande = await Commande.findById(req.params.id);
+    if (!commande) {
+      return res.status(404).json({ error: 'Commande non trouvée' });
+    }
+    res.json(commande);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 app.listen(PORT, () => {
