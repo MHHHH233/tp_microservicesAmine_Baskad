@@ -1,0 +1,81 @@
+POST http://localhost:5002/auth/register
+Content-Type: application/json
+
+{
+  "nom": "Test User",
+  "email": "test@example.com",
+  "mot_passe": "password123"
+}
+
+
+POST http://localhost:5002/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "mot_passe": "password123"
+}
+
+GET http://localhost:5000/produit/liste
+
+
+
+GET http://localhost:5000/produit/acheter?ids=productId1&ids=productId2
+
+
+
+POST http://localhost:5000/produit/acheter
+Content-Type: application/json
+
+{
+  "ids": ["productId1", "productId2"]
+}
+
+
+POST http://localhost:5001/commande/ajouter
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "produits": ["productId1", "productId2"],
+  "prix_total": 1299.98
+}
+
+
+
+GET http://localhost:5001/commande/liste
+Authorization: Bearer YOUR_JWT_TOKEN
+
+
+
+
+
+
+
+GET http://localhost:5001/commande/orderId
+Authorization: Bearer YOUR_JWT_TOKEN
+
+
+
+
+
+
+POST http://localhost:5003/livraison/ajouter
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "commande_id": "orderId",
+  "adresse": "123 Delivery Street, City, Country",
+  "date_livraison_estimee": "2025-04-15T10:00:00.000Z"
+}
+
+
+
+PUT http://localhost:5003/livraison/deliveryId
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+  "statut": "en cours"
+}
