@@ -1,29 +1,26 @@
 const mongoose = require("mongoose");
 
-
 const livraisonSchema = new mongoose.Schema({
   commande_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Commande',
     required: true
   },
-  transporteur_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Transporteur',
+  adresse: {
+    type: String,
     required: true
   },
   statut: {
     type: String,
-    enum: ['en_attente', 'en_cours', 'livré'],
+    enum: ['en attente', 'en cours', 'livrée', 'annulée'],
+    default: 'en attente'
+  },
+  date_livraison_estimee: {
+    type: Date,
     required: true
   },
-  adresse_livraison : {
-    type: String,
-    required: true
-  },
-  created_at: { 
-    type: Date, 
-    default: Date.now 
+  created_at: {
+    type: Date,
+    default: Date.now
   }
 });
 

@@ -1,0 +1,86 @@
+version: '3.9'
+
+services:
+
+  db:
+    image: mongo
+    container_name: delivery-db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongo-data:/data/db
+
+  auth:
+    build: ./autho-service
+    container_name: auth-service
+    ports:
+      - "5002:3004"  
+    environment:
+      - DB_HOST=db
+      - DB_PORT=27017
+      - DB_NAME=auth-service
+      - DB_USER=admin
+      - DB_PASSWORD=password
+    depends_on:
+      - db
+    volumes:
+      - ./autho-service:/app
+      - /app/node_modules
+
+  produit:
+    build: ./produit-service
+    container_name: produit-service
+    ports:
+      - "5000:3001" 
+    environment:
+      - DB_HOST=db
+      - DB_PORT=27017
+      - DB_NAME=produit-service
+      - AUTH_SERVICE_URL=http://auth:3004  
+    depends_on:
+      - db
+    volumes:
+      - ./produit-service:/app
+      - /app/node_modules
+
+  commande:
+    build: ./commande-service
+    container_name: commande-service
+    ports:
+      - "5001:3002"  
+    environment:
+      - DB_HOST=db
+      - DB_PORT=27017
+      - DB_NAME=commande-service
+      - AUTH_SERVICE_URL=http://auth:3004  
+      - PRODUCT_SERVICE_URL=http://produit:3001  
+    depends_on:
+      - auth
+      - produit
+      - db
+    volumes:
+      - ./commande-service:/app
+      - /app/node_modules
+
+  livraison:
+    build: ./livraison-service
+    container_name: livraison-service
+    ports:
+      - "5003:3003" 
+    environment:
+      - DB_HOST=db
+      - DB_PORT=27017
+      - DB_NAME=livraison-service
+      - ORDER_SERVICE_URL=http://commande:3002  
+      - AUTH_SERVICE_URL=http://auth:3004
+    depends_on:
+      - commande
+    volumes:
+      - ./livraison-service:/app
+      - /app/node_modules
+
+volumes:
+  mongo-data:

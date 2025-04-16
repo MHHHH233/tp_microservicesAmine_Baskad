@@ -1,13 +1,25 @@
 const express = require("express");
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 3001;
 const mongoose = require("mongoose");
+const axios = require("axios"); // Add axios for HTTP requests
+const verifyToken = require('./middleware/auth'); // Import auth middleware
 
+// Use environment variables from docker-compose
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || '27017';
+const DB_NAME = process.env.DB_NAME || 'produit-service';
+const DB_USER = process.env.DB_USER || 'admin';
+const DB_PASSWORD = process.env.DB_PASSWORD || 'password';
 
+const mongoURI = `mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin`;
 
-mongoose.connect("mongodb://localhost:27017/produit-service")
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
   .then(() => console.log("Produit DB Connected"))
-  .catch(err => console.error(err));
+  .catch(err => console.error("Erreur de connexion:", err));
 
 
 const Produit = mongoose.model("Produit", new mongoose.Schema({
@@ -46,7 +58,7 @@ app.post("/produit/ajouter", async (req, res) => {
   }
 });
 
-app.get("/produit/acheter", async (req, res) => {
+app.get("/produit/acheter", verifyToken, async (req, res) => {
   try {
     let ids = req.query.ids || [];
     
@@ -77,7 +89,7 @@ app.get("/produit/acheter", async (req, res) => {
 });
 
 // Add a POST endpoint for the same functionality
-app.post("/produit/acheter", async (req, res) => {
+app.post("/produit/acheter", verifyToken, async (req, res) => {
   try {
     const { ids } = req.body;
     
@@ -93,10 +105,44 @@ app.post("/produit/acheter", async (req, res) => {
       return res.status(404).json({ message: "Aucun produit trouvé" });
     }
     
-    res.json({
-      count: produits.length,
-      produits
-    });
+    // Calculate total price
+    const prix_total = produits.reduce((total, produit) => total + produit.prix, 0);
+
+    // Call the commande-service to create an order
+    try {
+      // Get the commande service URL from environment or use default
+      const COMMANDE_SERVICE_URL = process.env.COMMANDE_SERVICE_URL || 'http://commande-service:3002';
+      
+      // Forward the authorization header to the commande service
+      const response = await axios.post(
+        `${COMMANDE_SERVICE_URL}/commande/ajouter`, 
+        {
+          produits: produits.map(p => p._id.toString()),
+          prix_total
+        }, 
+        {
+          headers: {
+            'Authorization': req.headers.authorization
+          }
+        }
+      );
+      
+      // Return both products info and order info
+      res.status(201).json({
+        message: "Commande créée avec succès",
+        produits,
+        commande: response.data.commande
+      });
+      
+    } catch (error) {
+      console.error("Erreur lors de la création de la commande:", error.message);
+      // Still return products but with error message for order
+      res.status(207).json({
+        message: "Produits trouvés mais erreur lors de la création de la commande",
+        error: error.response?.data?.error || error.message,
+        produits
+      });
+    }
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

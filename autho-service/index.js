@@ -1,13 +1,23 @@
 const express = require("express");
 const app = express();
-const PORT =  4002;
+const PORT = process.env.PORT || 3004;
 const mongoose = require("mongoose");
-const Utilisateur = require('./models/Utilisateur');
+const Utilisateur = require('./model/Utilisateur');
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 
 mongoose.set('strictQuery', true);
-mongoose.connect("mongodb://localhost:27017/auth-service", {
+
+// Use environment variables from docker-compose
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || '27017';
+const DB_NAME = process.env.DB_NAME || 'auth-service';
+const DB_USER = process.env.DB_USER || 'admin';
+const DB_PASSWORD = process.env.DB_PASSWORD || 'password';
+
+const mongoURI = `mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin`;
+
+mongoose.connect(mongoURI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })

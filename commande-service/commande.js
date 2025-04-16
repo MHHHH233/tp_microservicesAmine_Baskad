@@ -1,19 +1,29 @@
 // commande-service/index.js
 const express = require("express");
 const app = express();
-const PORT = 4001;
+const PORT = 3002;
 const mongoose = require("mongoose");
 const Commande = require("./models/Commande");
 const verifyToken = require('./middleware/auth');
 
 
 mongoose.set('strictQuery', true);
-mongoose.connect("mongodb://localhost:27017/commande-service", {
+
+// Use environment variables from docker-compose
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || '27017';
+const DB_NAME = process.env.DB_NAME || 'commande-service';
+const DB_USER = process.env.DB_USER || 'admin';
+const DB_PASSWORD = process.env.DB_PASSWORD || 'password';
+
+const mongoURI = `mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin`;
+
+mongoose.connect(mongoURI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
 .then(() => console.log("Commande DB Connected"))
-.catch(err => console.error(err));
+.catch(err => console.error("Erreur de connexion:", err));
 
 // Order Model
 // const Commande = mongoose.model("Commande", new mongoose.Schema({

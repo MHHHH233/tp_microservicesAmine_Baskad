@@ -4,13 +4,22 @@ const axios = require('axios');
 const Livraison = require('./models/Livraison');
 const app = express();
 const verifyToken = require('./middleware/auth');
+const PORT = 3003;
+
 app.use(express.json());
 
+// Use environment variables from docker-compose
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || '27017';
+const DB_NAME = process.env.DB_NAME || 'livraison-service';
+const DB_USER = process.env.DB_USER || 'admin';
+const DB_PASSWORD = process.env.DB_PASSWORD || 'password';
+const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL || 'http://localhost:3002';
 
 app.post('/livraison/ajouter', verifyToken, async (req, res) => {
   try {
     const response = await axios.get(
-      `http://localhost:4001/commande/${req.body.commande_id}`,
+      `${ORDER_SERVICE_URL}/commande/${req.body.commande_id}`,
       {
         headers: {
           'Authorization': req.headers.authorization
@@ -46,8 +55,13 @@ app.put('/livraison/:id', verifyToken, async (req, res) => {
     }
   });
 
-mongoose.connect('mongodb://localhost:27017/livraison-service')
-  .then(() => {
-    app.listen(4003, () => console.log('Microservice Livraison démarré sur le port 4003'));
-  })
-  .catch(err => console.error(err));
+const mongoURI = `mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin`;
+
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => {
+  app.listen(PORT, () => console.log(`Microservice Livraison démarré sur le port ${PORT}`));
+})
+.catch(err => console.error("Erreur de connexion:", err));
